@@ -5,6 +5,12 @@ import sys
 LDI = 130
 PRN = 71
 HLT = 1
+MUL = 162
+PUSH = 69
+POP = 70
+program_filename = sys.argv[1]
+
+SP = 7
 
 
 class CPU:
@@ -15,6 +21,7 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.reg[SP] = 255
 
     def ram_read(self, MAR):
         value = self.ram[MAR]
@@ -25,24 +32,16 @@ class CPU:
 
     def load(self):
         """Load a program into memory."""
-
         address = 0
-
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        with open(program_filename) as f:
+            for line in f:
+                line = line.split('#')
+                line = line[0].strip()
+                if line == '':
+                    pass
+                else:
+                    self.ram[address] = int(line, 2)
+                    address += 1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -76,20 +75,39 @@ class CPU:
     def run(self):
         """Run the CPU."""
         self.load()
-
-        while True:
+        running = True
+        while running:
             IR = self.ram[self.pc]
             if IR == LDI:
                 operand_a = self.ram_read(self.pc+1)
                 operand_b = self.ram_read(self.pc+2)
                 self.reg[operand_a] = operand_b
-                self.pc += 2
+                self.pc += 3
             elif IR == PRN:
+                operand_a = self.ram_read(self.pc+1)
                 print(self.reg[operand_a])
-                self.pc += 1
+                self.pc += 2
+            elif IR == MUL:
+                self.reg[operand_a - 1] = self.reg[operand_a - 1] * \
+                    self.reg[operand_a]
+                self.pc += 3
+            elif IR == PUSH:
+                self.reg[SP] -= 1
+                operand_a = self.ram[self.pc+1]
+                value = self.reg[operand_a]
+                self.ram[self.reg[SP]] = value
+                self.pc += 2
+            elif IR == POP:
+                value = self.ram[self.reg[SP]]
+                operand_a = self.ram[self.pc+1]
+                self.reg[operand_a] = value
+                self.reg[SP] += 1
+                self.pc += 2
             elif IR == HLT:
-                break
-            self.pc += 1
+                running = False
+            else:
+                print("Unknown instruction")
+                running = False
 
 
 ddd = CPU()
