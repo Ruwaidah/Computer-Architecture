@@ -93,13 +93,14 @@ class CPU:
                 self.pc += 3
             elif IR == PUSH:
                 self.reg[SP] -= 1
-                operand_a = self.ram[self.pc+1]
+                operand_a = self.ram_read(self.pc+1)
                 value = self.reg[operand_a]
-                self.ram[self.reg[SP]] = value
+                # self.ram[self.reg[SP]] = value
+                self.ram_write(self.reg[SP], value)
                 self.pc += 2
             elif IR == POP:
-                value = self.ram[self.reg[SP]]
-                operand_a = self.ram[self.pc+1]
+                value = self.ram_read(self.reg[SP])
+                operand_a = self.ram_read(self.pc+1)
                 self.reg[operand_a] = value
                 self.reg[SP] += 1
                 self.pc += 2
