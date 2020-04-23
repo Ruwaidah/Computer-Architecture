@@ -6,8 +6,11 @@ LDI = 130
 PRN = 71
 HLT = 1
 MUL = 162
+ADD = 160
 PUSH = 69
 POP = 70
+CALL = 80
+RET = 17
 program_filename = sys.argv[1]
 
 SP = 7
@@ -91,6 +94,12 @@ class CPU:
                 self.reg[operand_a - 1] = self.reg[operand_a - 1] * \
                     self.reg[operand_a]
                 self.pc += 3
+
+            elif IR == ADD:
+                operand_a = self.ram_read(self.pc+1)
+                operand_b = self.ram_read(self.pc + 2)
+                self.reg[operand_a] = self.reg[operand_a] + self.reg[operand_b]
+                self.pc += 3
             elif IR == PUSH:
                 self.reg[SP] -= 1
                 operand_a = self.ram_read(self.pc+1)
@@ -104,6 +113,20 @@ class CPU:
                 self.reg[operand_a] = value
                 self.reg[SP] += 1
                 self.pc += 2
+
+            elif IR == CALL:
+                return_addr = self.pc + 2
+                self.reg[SP] -= 1
+                self.ram[self.reg[SP]] = return_addr
+                operand_a = self.ram_read(self.pc + 1)
+                dest_addr = self.reg[operand_a]
+                self.pc = dest_addr
+
+            elif IR == RET:
+                return_addr = self.ram_read(self.reg[SP])
+                self.reg[SP] += 1
+                self.pc = return_addr
+
             elif IR == HLT:
                 running = False
             else:
